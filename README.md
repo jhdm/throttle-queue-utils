@@ -1,7 +1,10 @@
-# Throttled Queue and Utilities
+# Throttled Batch Queue and Utilities
 
-> This includes throttled batch queue with capacity, retry, and async support.  It could be used for calling rate-limited services.
-> This also includes throttle, retry, and other utilities.
+> Throttled batch queue, throttle, retry, and other utilities
+
+Throttled batch queue supports capacity, retry, and async features.  It could be used for calling rate-limited services.
+
+This project is inspired by lodash.
 
 ## Installing Dependencies
 
