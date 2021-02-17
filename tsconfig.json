@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "importHelpers": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": false,
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "noImplicitThis": false,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ]
+    },
+    "lib": [
+      "esnext",
+      "dom"
+    ],
+    "types": [
+      "jest",
+      "node"
+    ],
+    "outDir": "dist"
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
