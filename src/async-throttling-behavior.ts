@@ -28,7 +28,7 @@ export class AsyncThrottlingBehavior<T = any, R = T> extends EventEmitter {
         });
     });
 
-    this.behavior.on('error', this.emit);
+    this.behavior.on('error', (error) => this.emit('error', error));
     this.behavior.on('finish', () => this.emit('finish'));
   }
 

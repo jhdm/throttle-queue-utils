@@ -1,14 +1,16 @@
 // In real app, import from npm package
-import { throttle } from '../src';
+import { throttleAsync } from '../src';
 
 const WAIT = 500;
 
+async function task(s: string) {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(s), 10);
+  });
+}
+
 async function main(): Promise<void> {
-  const throttled = throttle(
-    (s: string) => new Promise((resolve) => {
-      setTimeout(() => resolve(s), 10);
-    }),
-    WAIT);
+  const throttled = throttleAsync(task, WAIT);
   let result = await throttled('a'); // => 'a'
   console.log(result);
   // Within interval, so return last result

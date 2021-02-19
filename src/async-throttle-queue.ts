@@ -2,7 +2,7 @@ import { AsyncThrottlingBehavior } from './async-throttling-behavior';
 import { BatchPayload } from './batch-payload';
 import { retryable } from './retryable';
 
-export class AsyncThrottleQueue<T, R> extends AsyncThrottlingBehavior <T, R> {
+export class AsyncThrottleQueue<T, R> extends AsyncThrottlingBehavior<T, R> {
   constructor(
     task: (...args: T[]) => Promise<R>,
     wait?: number,
