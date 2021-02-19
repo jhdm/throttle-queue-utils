@@ -13,7 +13,7 @@ This project is inspired by lodash.
 ```typescript
 import { throttle } from 'throttle-queue-utils';
 
-const throttled = throttle((s: string) => s, WAIT);
+const throttled = throttle((s: string) => s, 1000);
 const a = throttled('a'); // => 'a'
 ```
 
