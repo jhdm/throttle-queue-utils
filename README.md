@@ -64,7 +64,9 @@ async function task(s: string) {
 
 Please see examples folder for more examples.
 
-## Installing Dependencies
+## Development
+
+### Installing Dependencies
 
 ```
 yarn install
