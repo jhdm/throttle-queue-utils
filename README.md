@@ -6,60 +6,43 @@ Throttled batch queue supports capacity, retry, and async features.  It could be
 
 This project is inspired by lodash.
 
-## Examples
+## Usage
 
-### Throttle (sync)
+To import the package:
 
 ```typescript
 import { throttle } from 'throttle-queue-utils';
+```
 
+To use synchronous throttle:
+
+```typescript
 const throttled = throttle((s: string) => s, 1000);
 const a = throttled('a'); // => 'a'
 ```
 
-### Throttle (async)
+To use async throttle:
 
 ```typescript
-import { throttleAsync } from 'throttle-queue-utils';
-
-async function task(s: string) {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(s), 10);
-  });
-}
-
-async function main(): Promise<void> {
-  const throttled = throttleAsync(task, 3000);
-  let result = await throttled('a'); // => 'a'
-}
+const throttled = throttleAsync(asyncTask, 3000);
+let result = await throttled('a'); // => 'a'
 ```
 
-### Async Throttled Queue Example
+Example async throttled queue:
 
 ```typescript
-import { AsyncThrottleQueue } from 'throttle-queue-utils';
+const queue = new AsyncThrottleQueue(asyncTask);
 
-async function main(): Promise<void> {
-  const queue = new AsyncThrottleQueue(task);
-  const results: string[] = [];
+const results: string[] = [];
+queue.on('result', (res) => {
+  results.push(res);
+});
 
-  queue.on('result', (res) => {
-    results.push(res);
-  });
+queue.add('a');
+queue.add('b');
 
-  queue.add('a');
-  queue.add('b');
-
-  await queue.end();
-
-  console.log(results); // => ['a', 'b']
-}
-
-async function task(s: string) {
-  return new Promise((resolve) => {
-    setTimeout(() => resolve(s), 10);
-  });
-}
+await queue.end();
+console.log(results); // => ['a', 'b']
 ```
 
 Please see examples folder for more examples.
