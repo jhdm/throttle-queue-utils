@@ -2,7 +2,9 @@
 
 > Throttled batch queue, throttle, retry, and other utilities
 
-Throttled batch queue supports capacity, retry, and async features.  It could be used for calling rate-limited services.
+`throttle` and `throttleAsync` functions provide throttling of tasks, that is, call the task at no less than specified interval length of time.
+
+Throttled batch queue (`AsyncThrottledQueue`) supports throttling, capacity, retry, and asynchronous features.  It could be used for calling rate-limited services.
 
 This project is inspired by lodash.
 
@@ -14,24 +16,38 @@ To import the package:
 import { throttle } from 'throttle-queue-utils';
 ```
 
-To use synchronous throttle:
+In order to illustrate what it looks like, let's look at some basic examples below.
+
+### Throttle
+
+To throttle task at three-second intervals:
 
 ```typescript
-const throttled = throttle((s: string) => s, 1000);
-const a = throttled('a'); // => 'a'
+const options = { leading: true, trailing: true };
+const throttled = throttle(task, 3000, options);
+let result = throttled('a'); // => 'a'
 ```
 
-To use async throttle:
+The leading edge and trailing edge options are `true`, by default.
+
+For the purpose of these examples, let's asusme that the task or async task functions echo back the input.  Then the return value above would be `'a'`.
+
+Asynchronous throttle is similar, but takes a task that returns a `Promise`:
 
 ```typescript
-const throttled = throttleAsync(asyncTask, 3000);
+const throttled = throttleAsync(asyncTask);
 let result = await throttled('a'); // => 'a'
 ```
 
-Example async throttled queue:
+### Asynchronous Throttled Batch Queue
+You can add payloads to the asynchronous throttled batch queue (`AsyncThrottleQueue`), and they will be
+processed by the task at specified intervals.
+
+#### Example:
 
 ```typescript
-const queue = new AsyncThrottleQueue(asyncTask);
+const options = { capacity: 65536 };
+const queue = new AsyncThrottleQueue(asyncTask, 3000, options);
 
 const results: string[] = [];
 queue.on('result', (res) => {
@@ -43,6 +59,30 @@ queue.add('b');
 
 await queue.end();
 console.log(results); // => ['a', 'b']
+```
+
+This example specifies the optional `capacity` in bytes.  If not specified, it will process all remaining payload at the next execution time.
+
+The optional `'result'` event listener receives task results.
+
+The `end()` method to indicate the end of input.  With no parameter, it returns a `Promise`, and you can `await` it to synchronize with the end of processing.
+
+It could be used to synchronize with the end of unit test, for example,
+
+```typescript
+it('should ...', async () => {
+  // ...
+  await queue.end();
+});
+```
+
+It also takes a callback function:
+
+```typescript
+it('should ...', (done) => {
+  // ...
+  queue.end(done);
+});
 ```
 
 Please see examples folder for more examples.
