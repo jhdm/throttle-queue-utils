@@ -40,8 +40,9 @@ let result = await throttled('a'); // => 'a'
 ```
 
 ### Asynchronous Throttled Batch Queue
-You can add payloads to the asynchronous throttled batch queue (`AsyncThrottleQueue`), and they will be
-processed by the task at specified intervals.
+The asynchronous throttled batch queue (`AsyncThrottleQueue`) below will execute
+specified `asyncTask` function at three-second intervals.  You can `add`
+items to be processed.
 
 #### Example:
 
@@ -61,7 +62,7 @@ await queue.end();
 console.log(results); // => ['a', 'b']
 ```
 
-This example specifies the optional `capacity` in bytes.  If not specified, it will process all remaining payload at the next execution time.
+This example specifies an optional `capacity` in bytes.  If not specified, it will process all remaining payload at the next execution time.
 
 The optional `'result'` event listener receives task results.
 
