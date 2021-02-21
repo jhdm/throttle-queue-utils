@@ -20,7 +20,7 @@ In order to illustrate what it looks like, let's look at some basic examples bel
 
 ### Throttle
 
-To throttle task at three-second intervals:
+To throttle task at three-second intervals, for example:
 
 ```typescript
 const options = { leading: true, trailing: true };
@@ -39,8 +39,9 @@ const throttled = throttleAsync(asyncTask);
 let result = await throttled('a'); // => 'a'
 ```
 
-### Asynchronous Throttled Batch Queue
-The asynchronous throttled batch queue (`AsyncThrottleQueue`) below will execute
+### Asynchronous Throttled Batch
+
+The asynchronous throttled batch queue (`AsyncThrottleQueue`) example below will execute
 specified `asyncTask` function at three-second intervals.  You can `add`
 items to be processed.
 
@@ -66,9 +67,7 @@ This example specifies an optional `capacity` in bytes.  If not specified, it wi
 
 The optional `'result'` event listener receives task results.
 
-The `end()` method to indicate the end of input.  With no parameter, it returns a `Promise`, and you can `await` it to synchronize with the end of processing.
-
-It could be used to synchronize with the end of unit test, for example,
+The optional `end()` method indicates the end of input to the queue.  With no parameter, it returns a `Promise`, and you can `await` it to synchronize with the end of processing.  It could be used to synchronize with the end of unit test, for example,
 
 ```typescript
 it('should ...', async () => {
@@ -77,7 +76,7 @@ it('should ...', async () => {
 });
 ```
 
-It also takes a callback function:
+It could also takes a callback function, instead:
 
 ```typescript
 it('should ...', (done) => {
