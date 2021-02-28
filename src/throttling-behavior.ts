@@ -1,92 +1,44 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { EventEmitter } from 'events';
-import { performance } from 'perf_hooks';
-import { RejectCallback, ResolveCallback } from './common';
+import { ResolveCallback } from './common';
+import { DEFAULT_WAIT, CoreThrottlingBehavior } from './core-throttling-behavior';
 import { Payload } from './payload';
-import { SingleElementPayload } from './single-element-payload';
-
-const DEFAULT_WAIT = 1000;
-const DEFAULT_LEADING = true;
-const DEFAULT_TRAILING = true;
 
 /**
- * Throttling Behavior.
- *
- * ## Events:
- *
- * ### 'result' event:
- *
- * 'result' event will be trailing edge result.
- *
- * #### Example:
- *
- * throttled.on('result', (result) => { ... })
- *
- * ### 'finish' event:
- *
- * If you call throttled.end(), then it will emit 'finish' event,
- * when requests have finished processing.
+ * Throttling Behavior with cancel, flush, and end features.
  *
  * @template T - task input argument type
- * @template R - task return type, if task returns `Promise<string>`, then `R` is `string`.
+ * @template R - task return type
  */
-export class ThrottlingBehavior<T = any, R = T> extends EventEmitter {
-  public readonly leading: boolean;
-  public readonly trailing: boolean;
-  private taskThis?: any;
-  protected payload: Payload<T>;
-
-  public result?: R;
-  protected timerId?: number;
-  protected timerPromise?: Promise<R>;
+export class ThrottlingBehavior<T = any, R = T> extends CoreThrottlingBehavior<T,R> {
+  protected eventEmitter: EventEmitter;
   protected ending = false;
-  private lastInvokeTime?: number;
 
   /**
    *
-   * @param {(...arg: T[]) => R} task - function to invoke
-   * @param {number} [wait=1000] - wait time between invocations of task (in milliseconds)
-   * @param {boolean} [options.leading=true] - invoke task on leading edge
-   * @param {boolean} [options.trailing=true] - invoke task on trailing edge
+   * @param task - function to invoke
+   * @param wait - wait time between invocations of task (in milliseconds)
+   * @param payload - [[Payload]], e.g. [[BatchPayload]] or [[SingleElementPayload]]
+   * @param options.leading - invoke task on leading edge
+   * @param options.trailing - invoke task on trailing edge
+   *
    */
   constructor(
-    private task: (...args: T[]) => R,
-    protected wait = DEFAULT_WAIT,
-    payload?: Payload<T>,
-    options?: Partial<{
-      leading: boolean;
-      trailing: boolean;
-    }>,
+    task: (...args: T[]) => R,
+    wait = DEFAULT_WAIT,
+    options?: {
+      leading?: boolean;
+      trailing?: boolean;
+      payload?: Payload<T>,
+      taskThis?: any;
+    },
   ) {
-    super();
-    const opts = options || {};
-    this.leading = opts.leading === undefined ? DEFAULT_LEADING : opts.leading;
-    this.trailing = opts.trailing === undefined ? DEFAULT_TRAILING : opts.trailing;
-    this.payload = payload || new SingleElementPayload();
+    super(task, wait, options);
+    this.eventEmitter = new EventEmitter();
   }
 
-  public setTaskThis(taskThis: any) {
-    this.taskThis = taskThis;
-  }
-
-  public call(...args: T[]): R | undefined {
-    this.payload.add(...args);
-
-    const now = performance.now();
-
-    if (this.leading && this.shouldInvoke(now)) {
-      // return this.invokeTask();
-      return this.result = this.invokeTask();
-    } else if (this.trailing && this.timerId === undefined) {
-      this.timerPromise = this.startTimer(now);
-      this.timerPromise.then(() => {
-        this.timerPromise = undefined;
-      });
-    }
-
-    return this.result;
-  }
-
+  /**
+   * Cancel any pending timer.
+   */
   public cancel(): void {
     if (this.timerId) {
       clearTimeout(this.timerId);
@@ -96,7 +48,7 @@ export class ThrottlingBehavior<T = any, R = T> extends EventEmitter {
   }
 
   /**
-   * Execute all remaining payloads and return results immediately.
+   * Execute all remaining payloads immediately and return results.
    */
   public flush(): R[] {
     this.cancel();
@@ -105,12 +57,20 @@ export class ThrottlingBehavior<T = any, R = T> extends EventEmitter {
       const result = this.task.apply(this.taskThis, this.payload.next());
       if (result !== undefined) {
         pendingResults.push(result);
-        this.emit('result', result);
+        this.eventEmitter.emit('result', result);
       }
     }
     return pendingResults;
   }
 
+  /**
+   * End of input.
+   *
+   * It will emit 'finish' event, when task processing has finished.
+   *
+   * @param callback
+   * @fires finish event
+   */
   public end(callback?: (err?: any) => void): Promise<void> | void {
     this.ending = true;
     let finishPromise: Promise<void> | undefined;
@@ -124,48 +84,28 @@ export class ThrottlingBehavior<T = any, R = T> extends EventEmitter {
       });
     }
     if (this.timerPromise === undefined) {
-      this.emit('finish');
+      this.eventEmitter.emit('finish');
     }
     return finishPromise;
   }
 
-  private shouldInvoke(time: number): boolean {
-    const timeSinceLastInvoke = this.lastInvokeTime !== undefined ? time - this.lastInvokeTime : 0;
-    return !this.timerId &&
-      (this.lastInvokeTime === undefined || timeSinceLastInvoke > this.wait);
+  public on(event: string | symbol, listener: (...args: any[]) => void): EventEmitter {
+    return this.eventEmitter.on(event, listener);
+  }
+
+  public emit(event: string | symbol, ...args: any[]): boolean {
+    return this.eventEmitter.emit(event, ...args);
   }
 
   protected invokeTask(): R {
-    this.lastInvokeTime = performance.now();
-    const result = this.task.apply(this.taskThis, this.payload.next());
-    this.emit('result', result);
+    const result = super.invokeTask();
+    this.eventEmitter.emit('result', result);
     return result;
   }
 
-  protected startTimer(time: number): Promise<any> {
-    return new Promise((resolve: ResolveCallback, reject: RejectCallback) => {
-      let remainingTime = this.wait;
-      if (this.lastInvokeTime) {
-        remainingTime = this.wait - (time - this.lastInvokeTime);
-        if (remainingTime <= 0) {
-          remainingTime = this.wait;
-        }
-      }
-      this.timerId = setTimeout(
-        this.timerExpired.bind(this),
-        remainingTime,
-        resolve,
-        reject);
-    });
-  }
-
   protected timerExpired(resolve: ResolveCallback): void {
-    this.timerId = undefined;
     try {
-      this.result = this.invokeTask();
-      resolve(this.result);
-      this.timerPromise = undefined;
-
+      super.timerExpired(resolve);
       if (this.ending) {
         if (!this.payload.isEmpty()) {
           setTimeout(
@@ -174,11 +114,11 @@ export class ThrottlingBehavior<T = any, R = T> extends EventEmitter {
             },
             this.wait);
         } else {
-          this.emit('finish');
+          this.eventEmitter.emit('finish');
         }
       }
     } catch(error) {
-      this.emit('error', error);
+      this.eventEmitter.emit('error', error);
     }
   }
 }

@@ -1,5 +1,4 @@
 import { Cancelable } from './common';
-import { SingleElementPayload } from './single-element-payload';
 import { throttleWithPayload } from './throttle-with-payload';
 
 export function throttle<T = any, R = T>(
@@ -10,5 +9,5 @@ export function throttle<T = any, R = T>(
     trailing: boolean;
   }>,
 ): Cancelable {
-  return throttleWithPayload(task, wait, new SingleElementPayload(), options);
+  return throttleWithPayload(task, wait, options);
 }

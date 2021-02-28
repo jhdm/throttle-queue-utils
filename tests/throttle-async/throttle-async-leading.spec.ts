@@ -2,7 +2,7 @@ import { AsyncCancelable, sleep } from '@/common';
 import { throttleAsync } from '@/throttle-async';
 import { AsyncFixture } from '../fixtures/async-fixture';
 
-describe('throttle sync', () => {
+describe('throttle async', () => {
   const WAIT = 20;
 
   describe('with leading = true, trailing = false', () => {

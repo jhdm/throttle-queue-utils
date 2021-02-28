@@ -4,36 +4,44 @@ import { ResolveCallback } from './common';
 import { Payload } from './payload';
 import { ThrottlingBehavior } from './throttling-behavior';
 
-export class AsyncThrottlingBehavior<T = any, R = T> extends EventEmitter {
+export class AsyncThrottlingBehavior<T = any, R = T> {
   private behavior: InternalThrottlingBehavior<T, R>;
+  protected eventEmitter: EventEmitter;
   private flushPromise?: Promise<R[]>;
 
+  /**
+   *
+   * @param task - function to invoke
+   * @param wait - wait time between invocations of task (in milliseconds)
+   * @param payload
+   * @param options.leading - invoke task on leading edge
+   * @param options.trailing - invoke task on trailing edge
+   */
   constructor(
     task: (...args: T[]) => Promise<R>,
     wait?: number,
-    payload?: Payload<T>,
-    options?: Partial<{
-      leading: boolean;
-      trailing: boolean;
-    }>,
+    options?: {
+      leading?: boolean;
+      trailing?: boolean;
+      payload?: Payload<T>;
+      taskThis?: any;
+    },
   ) {
-    super();
-    this.behavior = new InternalThrottlingBehavior<T, R>(task, wait, payload, options);
+    this.behavior = new InternalThrottlingBehavior<T, R>(task, wait, options);
+    this.eventEmitter = new EventEmitter();
 
     this.behavior.on('result', (result: Promise<R>) => {
-      result
-        .then((resultResolved: R) => this.emit('result', resultResolved))
-        .catch((error) => {
-          this.emit('error', error);
-        });
+      if (result instanceof Promise) {
+        result
+          .then((resultResolved: R) => this.eventEmitter.emit('result', resultResolved))
+          .catch((error) => {
+            this.eventEmitter.emit('error', error);
+          });
+      }
     });
 
-    this.behavior.on('error', (error) => this.emit('error', error));
-    this.behavior.on('finish', () => this.emit('finish'));
-  }
-
-  public setTaskThis(taskThis: any) {
-    this.behavior.setTaskThis(taskThis);
+    this.behavior.on('error', (error) => this.eventEmitter.emit('error', error));
+    this.behavior.on('finish', () => this.eventEmitter.emit('finish'));
   }
 
   public call(...args: T[]): Promise<R> | undefined {
@@ -45,16 +53,18 @@ export class AsyncThrottlingBehavior<T = any, R = T> extends EventEmitter {
   }
 
   public async flush(): Promise<R[]> {
-    if (this.behavior.result) {
-      await this.behavior.result;
-    }
+    await this.behavior.getResult();
     this.flushPromise = Promise.all(this.behavior.flush());
     return await this.flushPromise;
   }
 
   public async end(callback?: (err?: any) => void): Promise<void> {
-    await this.behavior.result;
+    await this.behavior.getResult();
     return this.behavior.end(callback);
+  }
+
+  public on(event: string | symbol, listener: (...args: any[]) => void): EventEmitter {
+    return this.eventEmitter.on(event, listener);
   }
 }
 

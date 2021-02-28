@@ -1,23 +1,25 @@
 import { performance } from 'perf_hooks';
 import { AsyncThrottleQueue } from '@/async-throttle-queue';
 import { sleep } from '@/common';
-import { AsyncFixture } from '../fixtures/async-fixture';
+import { RetryableAsyncFixture } from '../fixtures/retryable-async-fixture';
 
 describe('AsyncThrottleQueue, with rapid fire load test', () => {
   const CALL_DURATION = 5;
   const RETRY_INTERVAL = CALL_DURATION * 2;
   const WAIT = RETRY_INTERVAL * 10;
   const DELTA = RETRY_INTERVAL * 4;
-  let fixture: AsyncFixture;
+  let fixture: RetryableAsyncFixture;
   let queue: AsyncThrottleQueue<string, string>;
 
   beforeEach(() => {
-    fixture = new AsyncFixture({
+    fixture = new RetryableAsyncFixture({
+      attemptNumberToSucceed: 2,
       duration: CALL_DURATION
     });
     queue = new AsyncThrottleQueue(
       fixture.getTask(),
       WAIT,
+      { retryTimes: 2, retryInterval: RETRY_INTERVAL }
     );
   });
 
@@ -35,10 +37,14 @@ describe('AsyncThrottleQueue, with rapid fire load test', () => {
 
     await sleep(WAIT + DELTA);
 
-    expect(fixture.invokeCount).toBe(2);
+    expect(fixture.invokeCount).toBe(4);
+    expect(fixture.errorCount).toBe(2);
     expect(fixture.history[0]).toEqual(['C1']);
-    expect(fixture.history[1][0]).toBe('C2');
-    expect(fixture.history[1][fixture.history[1].length - 1]).toBe(`C${i - 1}`);
+    expect(fixture.history[1]).toEqual(['C1']);
+    expect(fixture.history[2][0]).toBe('C2');
+    expect(fixture.history[2][fixture.history[2].length - 1]).toBe(`C${i - 1}`);
+    expect(fixture.history[3][0]).toBe('C2');
+    expect(fixture.history[3][fixture.history[2].length - 1]).toBe(`C${i - 1}`);
   });
 
   it('should handle load across wait time', async () => {
@@ -56,12 +62,13 @@ describe('AsyncThrottleQueue, with rapid fire load test', () => {
 
     await sleep(WAIT + DELTA);
 
-    expect(fixture.invokeCount).toBe(2);
+    expect(fixture.invokeCount).toBe(4);
+    expect(fixture.errorCount).toBe(2);
 
     const expectedTotalCount = i - 1;
-    expect(fixture.history.length).toBe(2);
-    expect(fixture.history[1].length).toBe(expectedTotalCount - 1);
-    expect(fixture.history[1][0]).toBe('C2');
-    expect(fixture.history[1][fixture.history[1].length - 1]).toBe(`C${i - 1}`);
+    expect(fixture.history.length).toBe(4);
+    expect(fixture.history[3].length).toBe(expectedTotalCount - 1);
+    expect(fixture.history[3][0]).toBe('C2');
+    expect(fixture.history[3][fixture.history[3].length - 1]).toBe(`C${i - 1}`);
   });
 });

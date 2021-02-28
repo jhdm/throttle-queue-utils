@@ -1,3 +1,6 @@
+/**
+ * Payload Manager
+ */
 export interface Payload<T> {
   buffer: T[];
 
