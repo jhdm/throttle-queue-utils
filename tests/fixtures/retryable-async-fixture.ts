@@ -22,10 +22,10 @@ export class RetryableAsyncFixture {
    * @param {number} [options.attemptNumberToSucceed=2] starts with 1
    * @param {number} [options.duration=5] simulate processing time, in milliseconds
    */
-  constructor(options ?: Partial<{
-    attemptNumberToSucceed: number,
-    duration: number,
-  }>) {
+  constructor(options ?: {
+    attemptNumberToSucceed?: number,
+    duration?: number,
+  }) {
     const opts = options || {};
     this.duration = opts.duration === undefined ? DEFAULT_DURATION : opts.duration;
     this.attemptNumberToSucceed = options?.attemptNumberToSucceed || DEFAULT_ATTEMPT_TO_SUCCEED;

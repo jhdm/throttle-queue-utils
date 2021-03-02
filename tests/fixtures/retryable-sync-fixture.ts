@@ -17,7 +17,7 @@ export class RetryableSyncFixture {
    *
    * @param {number} [options.attemptNumberToSucceed=2] starts with 1
    */
-  constructor(options?: Partial<{attemptNumberToSucceed: number}>) {
+  constructor(options?: {attemptNumberToSucceed?: number}) {
     this.attemptNumberToSucceed = options?.attemptNumberToSucceed || DEFAULT_ATTEMPT_TO_SUCCEED;
   }
 

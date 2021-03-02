@@ -8,9 +8,9 @@ export class AsyncFixture {
   private duration: number;
   public history: string[][] = [];
 
-  constructor(options ?: Partial<{
-    duration: number
-  }>) {
+  constructor(options ?: {
+    duration?: number
+  }) {
     const opts = options || {};
     this.duration = opts.duration === undefined ? DEFAULT_DURATION : opts.duration;
   }

@@ -18,10 +18,10 @@ const DEFAULT_INTERVAL_IN_MILLISECONDS = 0;
  */
 export function retryable<T, R>(
   task: (...args: T[]) => R | Promise<R>,
-  options?: Partial<{
+  options?: {
     times?: number;
     interval?: number | ((attempt: number) => number);
-  }>,
+  },
 ): (...args: T[]) => Promise<R> {
   const times = options?.times || DEFAULT_TIMES;
   const interval = options?.interval || DEFAULT_INTERVAL_IN_MILLISECONDS;

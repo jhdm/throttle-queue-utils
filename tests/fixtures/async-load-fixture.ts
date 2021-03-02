@@ -8,9 +8,9 @@ export class AsyncLoadFixture {
   private duration: number;
   public invokeHistory: string[][] = [];
 
-  constructor(options ?: Partial<{
-    duration: number
-  }>) {
+  constructor(options ?: {
+    duration?: number
+  }) {
     const opts = options || {};
     this.duration = opts.duration === undefined ? DEFAULT_DURATION : opts.duration;
   }
