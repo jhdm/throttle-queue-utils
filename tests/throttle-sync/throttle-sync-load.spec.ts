@@ -1,5 +1,5 @@
 import { performance } from 'perf_hooks';
-import { Cancelable, sleep } from '@/common';
+import { Throttled, sleep } from '@/common';
 import { throttle } from '@/throttle';
 import { SyncFixture } from '../fixtures/sync-fixture';
 
@@ -7,7 +7,7 @@ describe('throttle sync with rapid fire load test', () => {
   const WAIT = 500;
   const DELTA = 1;
   let fixture: SyncFixture;
-  let throttled: Cancelable;
+  let throttled: Throttled;
 
   beforeEach(() => {
     fixture = new SyncFixture();

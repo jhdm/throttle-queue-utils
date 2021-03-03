@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
-import { AsyncThrottlingBehavior } from './async-throttling-behavior';
-import { AsyncCancelable } from './common';
+import { AsyncThrottler } from './async-throttler';
+import { AsyncThrottled } from './common';
 
 export function throttleAsync<T = any, R = T>(
   task: (...arg: T[]) => Promise<R>,
@@ -9,8 +9,8 @@ export function throttleAsync<T = any, R = T>(
     leading?: boolean;
     trailing?: boolean;
   },
-): AsyncCancelable<T, R> {
-  const behavior = new AsyncThrottlingBehavior<T, R>(
+): AsyncThrottled<T, R> {
+  const behavior = new AsyncThrottler<T, R>(
     task,
     wait,
     options);

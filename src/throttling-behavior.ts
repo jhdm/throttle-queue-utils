@@ -1,17 +1,28 @@
-import { EventEmitter } from 'events';
-import { ResolveCallback } from './common';
-import { DEFAULT_WAIT, CoreThrottlingBehavior } from './core-throttling-behavior';
+import { performance } from 'perf_hooks';
+import { RejectCallback, ResolveCallback } from './common';
 import { Payload } from './payload';
+import { SinglePayload } from './single-payload';
+
+export const DEFAULT_WAIT = 1000;
+const DEFAULT_LEADING = true;
+const DEFAULT_TRAILING = true;
 
 /**
- * Throttling Behavior with cancel, flush, and end features.
+ * Core Throttling Bahavior.
  *
  * @template T - task input argument type
  * @template R - task return type
  */
-export class ThrottlingBehavior<T = any, R = T> extends CoreThrottlingBehavior<T,R> {
-  protected eventEmitter: EventEmitter;
-  protected ending = false;
+export class ThrottlingBehavior<T = any, R = T> {
+  protected readonly leading: boolean;
+  protected readonly trailing: boolean;
+  protected taskThis?: any;
+  protected payload: Payload<T>;
+
+  protected result?: R;
+  protected timerId?: number;
+  protected timerPromise?: Promise<R>;
+  protected lastInvokeTime?: number;
 
   /**
    *
@@ -23,8 +34,8 @@ export class ThrottlingBehavior<T = any, R = T> extends CoreThrottlingBehavior<T
    *
    */
   constructor(
-    task: (...args: T[]) => R,
-    wait = DEFAULT_WAIT,
+    protected task: (...args: T[]) => R,
+    protected wait = DEFAULT_WAIT,
     options?: {
       leading?: boolean;
       trailing?: boolean;
@@ -32,93 +43,78 @@ export class ThrottlingBehavior<T = any, R = T> extends CoreThrottlingBehavior<T
       taskThis?: any;
     },
   ) {
-    super(task, wait, options);
-    this.eventEmitter = new EventEmitter();
+    const opts = options || {};
+    this.leading = opts.leading === undefined ? DEFAULT_LEADING : opts.leading;
+    this.trailing = opts.trailing === undefined ? DEFAULT_TRAILING : opts.trailing;
+    this.payload = options?.payload || new SinglePayload();
+    this.taskThis = options?.taskThis;
   }
 
   /**
-   * Cancel any pending timer.
+   * Get the last task invocation result.
    */
-  public cancel(): void {
-    if (this.timerId) {
-      clearTimeout(this.timerId);
-      this.timerId = undefined;
-      this.timerPromise = undefined;
-    }
+  public getResult(): R | undefined {
+    return this.result;
   }
 
   /**
-   * Execute all remaining payloads immediately and return results.
-   */
-  public flush(): R[] {
-    this.cancel();
-    const pendingResults: any[] = [];
-    while (!this.payload.isEmpty()) {
-      const result = this.task.apply(this.taskThis, this.payload.next());
-      if (result !== undefined) {
-        pendingResults.push(result);
-        this.eventEmitter.emit('result', result);
-      }
-    }
-    return pendingResults;
-  }
-
-  /**
-   * End of input.
+   * Add payload for processing.
    *
-   * It will emit 'finish' event, when task processing has finished.
-   *
-   * @param callback
-   * @fires finish event
+   * @param args
+   * @fires result event
    */
-  public end(callback?: (err?: any) => void): Promise<void> | void {
-    this.ending = true;
-    let finishPromise: Promise<void> | undefined;
-    if (callback) {
-      this.on('finish', callback);
-    } else {
-      finishPromise = new Promise((resolve) => {
-        this.on('finish', () => {
-          resolve(undefined);
-        });
+  public call(...args: T[]): R | undefined {
+    this.payload.add(...args);
+    const now = performance.now();
+    if (this.leading && this.shouldInvoke(now)) {
+      return this.result = this.invokeTask();
+    } else if (this.trailing && this.timerId === undefined) {
+      this.timerPromise = this.startTimer(now);
+      this.timerPromise.then(() => {
+        this.timerPromise = undefined;
       });
     }
-    if (this.timerPromise === undefined) {
-      this.eventEmitter.emit('finish');
-    }
-    return finishPromise;
+
+    return this.result;
   }
 
-  public on(event: string | symbol, listener: (...args: any[]) => void): EventEmitter {
-    return this.eventEmitter.on(event, listener);
-  }
-
-  public emit(event: string | symbol, ...args: any[]): boolean {
-    return this.eventEmitter.emit(event, ...args);
+  /**
+   * @ignore
+   * @param time timestamp
+   */
+  private shouldInvoke(time: number): boolean {
+    const timeSinceLastInvoke = this.lastInvokeTime !== undefined ? time - this.lastInvokeTime : 0;
+    return !this.timerId &&
+      (this.lastInvokeTime === undefined || timeSinceLastInvoke > this.wait);
   }
 
   protected invokeTask(): R {
-    const result = super.invokeTask();
-    this.eventEmitter.emit('result', result);
+    this.lastInvokeTime = performance.now();
+    const result = this.task.apply(this.taskThis, this.payload.next());
     return result;
   }
 
-  protected timerExpired(resolve: ResolveCallback): void {
-    try {
-      super.timerExpired(resolve);
-      if (this.ending) {
-        if (!this.payload.isEmpty()) {
-          setTimeout(
-            () => {
-              this.timerPromise = this.startTimer(performance.now());
-            },
-            this.wait);
-        } else {
-          this.eventEmitter.emit('finish');
+  protected startTimer(time: number): Promise<any> {
+    return new Promise((resolve: ResolveCallback, reject: RejectCallback) => {
+      let remainingTime = this.wait;
+      if (this.lastInvokeTime) {
+        remainingTime = this.wait - (time - this.lastInvokeTime);
+        if (remainingTime <= 0) {
+          remainingTime = this.wait;
         }
       }
-    } catch(error) {
-      this.eventEmitter.emit('error', error);
-    }
+      this.timerId = setTimeout(
+        this.timerExpired.bind(this),
+        remainingTime,
+        resolve,
+        reject);
+    });
+  }
+
+  protected timerExpired(resolve: ResolveCallback): void {
+    this.timerId = undefined;
+    this.result = this.invokeTask();
+    resolve(this.result);
+    this.timerPromise = undefined;
   }
 }

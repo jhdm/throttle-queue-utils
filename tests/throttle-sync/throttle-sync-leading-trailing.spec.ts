@@ -1,4 +1,4 @@
-import { Cancelable, sleep } from '@/common';
+import { Throttled, sleep } from '@/common';
 import { throttle } from '@/throttle';
 import { SyncFixture } from '../fixtures/sync-fixture';
 
@@ -8,7 +8,7 @@ describe('throttle sync', () => {
 
   describe('with default leading = true, trailing = true', () => {
     let fixture: SyncFixture;
-    let throttled: Cancelable;
+    let throttled: Throttled;
 
     beforeEach(() => {
       fixture = new SyncFixture();

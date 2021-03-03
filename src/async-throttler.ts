@@ -2,9 +2,9 @@ import { EventEmitter } from 'events';
 import { performance } from 'perf_hooks';
 import { ResolveCallback } from './common';
 import { Payload } from './payload';
-import { ThrottlingBehavior } from './throttling-behavior';
+import { Throttler } from './throttler';
 
-export class AsyncThrottlingBehavior<T = any, R = T> {
+export class AsyncThrottler<T = any, R = T> {
   private behavior: InternalThrottlingBehavior<T, R>;
   protected eventEmitter: EventEmitter;
   private flushPromise?: Promise<R[]>;
@@ -68,7 +68,7 @@ export class AsyncThrottlingBehavior<T = any, R = T> {
   }
 }
 
-class InternalThrottlingBehavior<T, R> extends ThrottlingBehavior<T, Promise<R>> {
+class InternalThrottlingBehavior<T, R> extends Throttler<T, Promise<R>> {
   protected timerExpired(resolve: ResolveCallback): void {
     this.timerId = undefined;
     try {

@@ -1,10 +1,10 @@
 export { AsyncThrottleQueue } from './async-throttle-queue';
-export { AsyncThrottlingBehavior } from './async-throttling-behavior';
+export { AsyncThrottler as AsyncThrottlingBehavior } from './async-throttler';
 export { BatchPayload } from './batch-payload';
-export { AsyncCancelable, Cancelable } from './common';
+export { AsyncThrottled, Throttled } from './common';
 export { Payload } from './payload';
 export { retryable } from './retryable';
-export { SingleElementPayload } from './single-element-payload';
+export { SinglePayload } from './single-payload';
 export { throttle } from './throttle';
 export { throttleAsync } from './throttle-async';
-export { ThrottlingBehavior } from './throttling-behavior';
+export { Throttler } from './throttler';

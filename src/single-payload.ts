@@ -1,6 +1,6 @@
 import { Payload } from './payload';
 
-export class SingleElementPayload<T> implements Payload<T> {
+export class SinglePayload<T> implements Payload<T> {
   public buffer: T[] = [];
 
   public add(...args: T[]): void {

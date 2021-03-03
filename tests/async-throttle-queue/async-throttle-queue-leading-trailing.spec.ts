@@ -1,5 +1,5 @@
 import { AsyncThrottleQueue } from '@/async-throttle-queue';
-import { Cancelable, sleep } from '@/common';
+import { sleep } from '@/common';
 import { RetryableAsyncFixture } from '../fixtures/retryable-async-fixture';
 
 describe('Throttle batch async', () => {
@@ -21,8 +21,8 @@ describe('Throttle batch async', () => {
         fixture.getTask(),
         WAIT,
         {
-          times: 3,
-          interval: RETRY_INTERVAL,
+          retryTimes: 3,
+          retryInterval: RETRY_INTERVAL,
         },
       );
     });

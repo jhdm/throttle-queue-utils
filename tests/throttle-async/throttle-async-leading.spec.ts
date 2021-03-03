@@ -1,4 +1,4 @@
-import { AsyncCancelable, sleep } from '@/common';
+import { AsyncThrottled, sleep } from '@/common';
 import { throttleAsync } from '@/throttle-async';
 import { AsyncFixture } from '../fixtures/async-fixture';
 
@@ -7,7 +7,7 @@ describe('throttle async', () => {
 
   describe('with leading = true, trailing = false', () => {
     let fixture: AsyncFixture;
-    let throttled: AsyncCancelable;
+    let throttled: AsyncThrottled;
 
     beforeEach(() => {
       fixture = new AsyncFixture();

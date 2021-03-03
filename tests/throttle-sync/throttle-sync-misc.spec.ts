@@ -1,4 +1,4 @@
-import { Cancelable, sleep } from '@/common';
+import { Throttled, sleep } from '@/common';
 import { throttle } from '@/throttle';
 import { SyncFixture } from '../fixtures/sync-fixture';
 
@@ -8,7 +8,7 @@ describe('throttle', () => {
   const SLEEP_TIME = WAIT + DELTA;
 
   let fixture: SyncFixture;
-  let throttled: Cancelable;
+  let throttled: Throttled<string, string>;
 
   beforeEach(() => {
     fixture = new SyncFixture();
@@ -39,8 +39,8 @@ describe('throttle', () => {
   });
 
   it('should throw error on leading edge', () => {
-    throttled = throttle(() => {
-      throw new Error('some error');
+    throttled = throttle((...args: string[]) => {
+      throw new Error(`some error ${args}`);
     });
 
     let caughtError: any;
@@ -49,13 +49,13 @@ describe('throttle', () => {
     } catch(error) {
       caughtError = error;
     }
-    expect(caughtError).toBeDefined();
+    expect(caughtError).toEqual(new Error('some error C1'));
   });
 
   it('should emit error on timer trailing edge', async () => {
     throttled = throttle(
-      () => {
-        throw new Error('some error');
+      (...args: string[]) => {
+        throw new Error(`some error ${args}`);
       },
       WAIT,
       {
@@ -63,16 +63,14 @@ describe('throttle', () => {
         trailing: true,
       });
     const errorMock = jest.fn();
+
     throttled.on('error', errorMock);
 
-    let caughtError: any;
-    try {
-      throttled('C1');
-    } catch(error) {
-      caughtError = error;
-    }
+    throttled('C1');
+    expect(errorMock).not.toHaveBeenCalled();
+
     await sleep(SLEEP_TIME);
+
     expect(errorMock).toHaveBeenCalled();
-    expect(caughtError).toBeUndefined();
   });
 });

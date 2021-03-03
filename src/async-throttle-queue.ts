@@ -1,4 +1,4 @@
-import { AsyncThrottlingBehavior } from './async-throttling-behavior';
+import { AsyncThrottler } from './async-throttler';
 import { BatchPayload } from './batch-payload';
 import { retryable } from './retryable';
 
@@ -8,7 +8,7 @@ import { retryable } from './retryable';
  * It supports optional capacity and retry.
  *
  */
-export class AsyncThrottleQueue<T, R> extends AsyncThrottlingBehavior<T, R> {
+export class AsyncThrottleQueue<T, R> extends AsyncThrottler<T, R> {
   /**
    * @template T - task input argument type
    * @template R - task return type

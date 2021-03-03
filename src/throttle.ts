@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
-import { Cancelable } from './common';
-import { ThrottlingBehavior } from './throttling-behavior';
+import { Throttled } from './common';
+import { Throttler } from './throttler';
 
 export function throttle<T = any, R = T>(
   task: (...arg: T[]) => R,
@@ -9,8 +9,8 @@ export function throttle<T = any, R = T>(
     leading?: boolean;
     trailing?: boolean;
   },
-): Cancelable<T, R> {
-  const behavior = new ThrottlingBehavior<T, R>(task, wait, options);
+): Throttled<T, R> {
+  const behavior = new Throttler<T, R>(task, wait, options);
   const throttled = function (...args: T[]): R | undefined {
     return behavior.call(...args);
   };

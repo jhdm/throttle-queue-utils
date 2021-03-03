@@ -1,5 +1,5 @@
 import { performance } from 'perf_hooks';
-import { AsyncCancelable, sleep } from '@/common';
+import { AsyncThrottled, sleep } from '@/common';
 import { throttleAsync } from '@/throttle-async';
 import { AsyncFixture } from '../fixtures/async-fixture';
 
@@ -7,7 +7,7 @@ describe('throttle async with rapid fire load test', () => {
   const WAIT = 1000;
   const DELTA = 1;
   let fixture: AsyncFixture;
-  let throttled: AsyncCancelable;
+  let throttled: AsyncThrottled;
 
   beforeEach(() => {
     fixture = new AsyncFixture();
