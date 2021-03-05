@@ -71,6 +71,8 @@ describe('throttle', () => {
 
     await sleep(SLEEP_TIME);
 
+    await throttled.end();
+
     expect(errorMock).toHaveBeenCalled();
   });
 });

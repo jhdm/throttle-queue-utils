@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { ResolveCallback } from './common';
+import { RejectCallback, ResolveCallback } from './common';
 import { DEFAULT_WAIT, ThrottlingBehavior } from './throttling-behavior';
 import { Payload } from './payload';
 
@@ -17,9 +17,10 @@ export class Throttler<T = any, R = T> extends ThrottlingBehavior<T,R> {
    *
    * @param task - function to invoke
    * @param wait - wait time between invocations of task (in milliseconds)
-   * @param payload - [[Payload]], e.g. [[BatchPayload]] or [[SingleElementPayload]]
    * @param options.leading - invoke task on leading edge
    * @param options.trailing - invoke task on trailing edge
+   * @param options.payload - [[Payload]], e.g. [[BatchPayload]] or [[SingleElementPayload]]
+   * @param options.taskThis - `this` of task function
    *
    */
   constructor(
@@ -28,12 +29,26 @@ export class Throttler<T = any, R = T> extends ThrottlingBehavior<T,R> {
     options?: {
       leading?: boolean;
       trailing?: boolean;
-      payload?: Payload<T>,
+      payload?: Payload<T>;
       taskThis?: any;
     },
   ) {
     super(task, wait, options);
     this.eventEmitter = new EventEmitter();
+  }
+
+  public call(...args: T[]): R | undefined {
+    const results = super.call(...args);
+    if (this.timerPromise) {
+      this.timerPromise
+        .then(() => {
+          this.timerPromise = undefined;
+        })
+        .catch((reason) => {
+          this.eventEmitter.emit('error', reason);
+        });
+    }
+    return results;
   }
 
   /**
@@ -71,7 +86,7 @@ export class Throttler<T = any, R = T> extends ThrottlingBehavior<T,R> {
    * @param callback
    * @fires finish event
    */
-  public end(callback?: (err?: any) => void): Promise<void> | void {
+  public end(callback?: (err?: any) => void): void | Promise<void> {
     this.ending = true;
     let finishPromise: Promise<void> | undefined;
     if (callback) {
@@ -103,9 +118,9 @@ export class Throttler<T = any, R = T> extends ThrottlingBehavior<T,R> {
     return result;
   }
 
-  protected timerExpired(resolve: ResolveCallback): void {
+  protected timerExpired(resolve: ResolveCallback, reject: RejectCallback): void {
     try {
-      super.timerExpired(resolve);
+      super.timerExpired(resolve, reject);
       if (this.ending) {
         if (!this.payload.isEmpty()) {
           setTimeout(

@@ -1,6 +1,6 @@
 {
   "name": "throttle-queue-utils",
-  "description": "throttled batch queue and utilities",
+  "description": "throttled batch queue and flow control",
   "version": "0.1.0",
   "private": false,
   "author": "Joseph Hwang",
@@ -16,7 +16,8 @@
     "batch",
     "retry",
     "capacity",
-    "async"
+    "async",
+    "task"
   ],
   "scripts": {
     "build": "yarn clean && yarn compile && yarn lint",

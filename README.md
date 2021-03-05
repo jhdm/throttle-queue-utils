@@ -1,10 +1,10 @@
 # Throttled Batch Queue and Utilities
 
-> Throttled batch queue, throttle, retry, and other utilities
+> Throttled batch queue, throttle, retry, and other flow control utilities
 
 `throttle` and `throttleAsync` functions provide throttling of tasks, that is, call the task at no less than specified interval length of time.
 
-Throttled batch queue (`AsyncThrottledQueue`) supports throttling, capacity, retry, and asynchronous features.  It could be used for calling rate-limited services.
+Throttled batch queue (`AsyncThrottledQueue`) supports throttling, capacity, retry, and asynchronous features.  A use case is client side of calling rate-limited services.
 
 This project is inspired by lodash.
 

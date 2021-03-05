@@ -31,13 +31,11 @@ export class AsyncThrottler<T = any, R = T> {
     this.eventEmitter = new EventEmitter();
 
     this.behavior.on('result', (result: Promise<R>) => {
-      if (result instanceof Promise) {
-        result
-          .then((resultResolved: R) => this.eventEmitter.emit('result', resultResolved))
-          .catch((error) => {
-            this.eventEmitter.emit('error', error);
-          });
-      }
+      result
+        .then((resultResolved: R) => this.eventEmitter.emit('result', resultResolved))
+        .catch((error) => {
+          this.eventEmitter.emit('error', error);
+        });
     });
 
     this.behavior.on('error', (error) => this.eventEmitter.emit('error', error));
@@ -58,9 +56,11 @@ export class AsyncThrottler<T = any, R = T> {
     return await this.flushPromise;
   }
 
-  public async end(callback?: (err?: any) => void): Promise<void> {
-    await this.behavior.getResult();
-    return this.behavior.end(callback);
+  public end(callback?: (err?: any) => void): void | Promise<void> {
+    if (callback) {
+      this.behavior.end(callback);
+    }
+    return this.behavior.end();
   }
 
   public on(event: string | symbol, listener: (...args: any[]) => void): EventEmitter {

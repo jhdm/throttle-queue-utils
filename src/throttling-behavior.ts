@@ -70,9 +70,9 @@ export class ThrottlingBehavior<T = any, R = T> {
       return this.result = this.invokeTask();
     } else if (this.trailing && this.timerId === undefined) {
       this.timerPromise = this.startTimer(now);
-      this.timerPromise.then(() => {
-        this.timerPromise = undefined;
-      });
+      // this.timerPromise.then(() => {
+      //   this.timerPromise = undefined;
+      // });
     }
 
     return this.result;
@@ -111,10 +111,15 @@ export class ThrottlingBehavior<T = any, R = T> {
     });
   }
 
-  protected timerExpired(resolve: ResolveCallback): void {
+  protected timerExpired(resolve: ResolveCallback, reject: RejectCallback): void {
     this.timerId = undefined;
-    this.result = this.invokeTask();
-    resolve(this.result);
-    this.timerPromise = undefined;
+    try {
+      this.result = this.invokeTask();
+      resolve(this.result);
+    } catch(error) {
+      reject(error);
+    } finally {
+      this.timerPromise = undefined;
+    }
   }
 }
