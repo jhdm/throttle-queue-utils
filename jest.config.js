@@ -18,4 +18,7 @@ module.exports = {
     '/node_modules/',
     '<rootDir>/dist/',
   ],
+  collectCoverageFrom: [
+    'src/**/{!(ignore-me),}.ts',
+  ],
 };

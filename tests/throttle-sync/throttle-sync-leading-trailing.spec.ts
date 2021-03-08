@@ -1,5 +1,5 @@
 import { Throttled, sleep } from '@/common';
-import { throttle } from '@/throttle';
+import { throttle } from '@/.';
 import { SyncFixture } from '../fixtures/sync-fixture';
 
 describe('throttle sync', () => {
