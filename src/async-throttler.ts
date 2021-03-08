@@ -69,7 +69,6 @@ export class AsyncThrottler<T = any, R = T> {
 }
 
 class InternalThrottlingBehavior<T, R> extends Throttler<T, Promise<R>> {
-  // FIXME await result before invokeTask?
 
   protected timerExpired(resolve: ResolveCallback): void {
     this.timerId = undefined;

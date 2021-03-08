@@ -19,6 +19,6 @@ module.exports = {
     '<rootDir>/dist/',
   ],
   collectCoverageFrom: [
-    'src/**/{!(ignore-me),}.ts',
+    'src/**/*.ts',
   ],
 };
