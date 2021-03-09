@@ -32,8 +32,8 @@ describe('AsyncThrottleQueue', () => {
         {
           leading: false,
           trailing: true,
-          times: 3,
-          interval: RETRY_INTERVAL,
+          retryTimes: 3,
+          retryInterval: RETRY_INTERVAL,
         },
       );
     });

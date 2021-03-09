@@ -8,88 +8,85 @@ describe('throttle async', () => {
   const DELTA = CALL_DURATION * 2;
   const SLEEP_TIME = WAIT + DELTA;
 
-  describe('with default leading = true, trailing = true', () => {
-    let fixture: AsyncFixture;
-    let throttled: AsyncThrottled;
+  let fixture: AsyncFixture;
+  let throttled: AsyncThrottled;
 
-    beforeEach(() => {
-      fixture = new AsyncFixture({
-        duration: CALL_DURATION
-      });
-      throttled = throttleAsync(
-        fixture.getTask(),
-        WAIT,
-      );
+  beforeEach(() => {
+    fixture = new AsyncFixture({
+      duration: CALL_DURATION
     });
+    throttled = throttleAsync(
+      fixture.getTask(),
+      WAIT,
+    );
+  });
 
-    it('should emit result and finish events', async () => {
-      const resultMock = jest.fn();
-      const finishMock = jest.fn();
-      throttled.on('result', resultMock);
-      throttled.on('finish', finishMock);
+  it('should emit result and finish events', async () => {
+    const resultMock = jest.fn();
+    const finishMock = jest.fn();
+    throttled.on('result', resultMock);
+    throttled.on('finish', finishMock);
 
-      const r1 = throttled('C1');
-      throttled('C2');
+    const r1 = throttled('C1');
+    throttled('C2');
 
-      await expect(r1).resolves.toBe('C1');
+    await expect(r1).resolves.toBe('C1');
 
-      await throttled.end();
+    await throttled.end();
 
-      expect(resultMock).toHaveBeenCalledWith('C1');
-      expect(finishMock).toHaveBeenCalledTimes(1);
-    });
+    expect(resultMock).toHaveBeenCalledWith('C1');
+    expect(finishMock).toHaveBeenCalledTimes(1);
+  });
 
-    it('should emit error event on leading edge', async () => {
-      const throttled = throttleAsync(
-        (_arg: string) => Promise.reject('some error'),
-        WAIT,
-        {
-          leading: true,
-          trailing: false,
-        }
-      );
-      const errorMock = jest.fn();
-      throttled.on('error', errorMock);
-      try {
-        await throttled('C1');
-        await sleep(SLEEP_TIME);
-      } catch(err) {
-        // caught expected error
+  it('should throw error on leading edge', async () => {
+    const throttled = throttleAsync(
+      // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+      (_arg: string) => Promise.reject('leading edge error'),
+      WAIT,
+      {
+        leading: true,
+        trailing: false,
       }
-      expect(errorMock).toHaveBeenCalled();
-    });
-
-    it('should emit error event on trailing edge', async () => {
-      throttled = throttleAsync(
-        (_arg: string) => Promise.reject('some error'),
-        WAIT,
-        {
-          leading: false,
-          trailing: true,
-        }
-      );
-      const errorMock = jest.fn();
-      throttled.on('error', errorMock);
-      // try {
+    );
+    const errorMock = jest.fn();
+    throttled.on('error', errorMock);
+    let caughtError: Error | undefined;
+    try {
       await throttled('C1');
-      await sleep(SLEEP_TIME);
-      // await sleep(SLEEP_TIME);
-      // } catch(err) {
-      //   caught expected error
-      // }
-      expect(errorMock).toHaveBeenCalled();
-    });
+    } catch(error) {
+      caughtError = error;
+    }
+    expect(caughtError).toBe('leading edge error');
+  });
 
-    it('should end() without pending invocation', async () => {
-      const finishMock = jest.fn();
-      throttled.on('finish', finishMock);
+  it('should emit error event on trailing edge', async () => {
+    throttled = throttleAsync(
+      // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
+      (_arg: string) => Promise.reject('trailing edge error'),
+      WAIT,
+      {
+        leading: false,
+        trailing: true,
+      }
+    );
 
-      const r1 = throttled('C1');
-      await expect(r1).resolves.toBe('C1');
+    const errorMock = jest.fn();
+    throttled.on('error', errorMock);
 
-      await throttled.end();
+    await throttled('C1');
+    await sleep(SLEEP_TIME);
+    expect(errorMock).toHaveBeenCalledWith('trailing edge error');
+  });
 
-      expect(finishMock).toHaveBeenCalledTimes(1);
-    });
+  it('should end() without pending invocation', async () => {
+    const finishMock = jest.fn();
+    throttled.on('finish', finishMock);
+
+    const r1 = throttled('C1');
+    await expect(r1).resolves.toBe('C1');
+
+    await throttled.end();
+
+    expect(finishMock).toHaveBeenCalledTimes(1);
   });
 });

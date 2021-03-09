@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from 'events';
 
 export async function sleep(wait: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, wait));
@@ -16,7 +16,7 @@ export interface AsyncThrottled<T = any, R = T> {
   (...args: T[]): Promise<R> | undefined;
   cancel(): void;
   flush(): Promise<R[]>;
-  on(event: string | symbol, listener: (...args: R[]) => void): EventEmitter;
+  on(event: string | symbol, listener: Function): EventEmitter;
   end: (callback?: (err?: any) => void) => Promise<void> | void;
 }
 

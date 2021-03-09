@@ -70,9 +70,6 @@ export class ThrottlingBehavior<T = any, R = T> {
       return this.result = this.invokeTask();
     } else if (this.trailing && this.timerId === undefined) {
       this.timerPromise = this.startTimer(now);
-      // this.timerPromise.then(() => {
-      //   this.timerPromise = undefined;
-      // });
     }
 
     return this.result;
